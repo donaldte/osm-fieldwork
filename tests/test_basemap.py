@@ -32,7 +32,6 @@ log = logging.getLogger(__name__)
 rootdir = os.path.dirname(os.path.abspath(__file__))
 boundary = f"{rootdir}/testdata/Rollinsville.geojson"
 outfile = f"{rootdir}/testdata/rollinsville.mbtiles"
-boundary_geojson = f"{rootdir}/testdata/Rollinsville.geojson"
 boundary_bbox = "-105.642662 39.917580 -105.631343 39.929250"  # Example BBOX string
 base = "./tiles"
 # boundary = open(infile, "r")
@@ -136,3 +135,5 @@ if __name__ == "__main__":
     test_create_with_byteio()
     test_create_with_bbox()
     test_create_with_invalid_boundary()
+
+
