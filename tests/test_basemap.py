@@ -19,6 +19,7 @@
 #
 """Test functionalty of basemapper.py."""
 
+import io
 import logging
 import os
 import shutil
@@ -31,6 +32,8 @@ log = logging.getLogger(__name__)
 rootdir = os.path.dirname(os.path.abspath(__file__))
 boundary = f"{rootdir}/testdata/Rollinsville.geojson"
 outfile = f"{rootdir}/testdata/rollinsville.mbtiles"
+boundary_geojson = f"{rootdir}/testdata/Rollinsville.geojson"
+boundary_bbox = "-105.642662 39.917580 -105.631343 39.929250"  # Example BBOX string
 base = "./tiles"
 # boundary = open(infile, "r")
 # poly = geojson.load(boundary)
@@ -42,8 +45,8 @@ base = "./tiles"
 #    geometry = shape(poly)
 
 
-def test_create():
-    """See if the file got loaded."""
+def test_create_with_geojson():
+    """Test loading with a GeoJSON boundary."""
     hits = 0
     basemap = BaseMapper(boundary, base, "topo", False)
     tiles = list()
@@ -66,5 +69,70 @@ def test_create():
     assert hits == 2
 
 
+def test_create_with_byteio():
+    """Test loading with a BytesIO boundary"""
+    hits = 0
+    with open(boundary, "rb") as f:
+        boundary_bytes = io.BytesIO(f.read())
+    basemap = BaseMapper(boundary_bytes, base, "topo", False)
+    tiles = list()
+    for level in [8, 9, 10, 11, 12]:
+        basemap.getTiles(level)
+        tiles += basemap.tiles
+
+    if len(tiles) == 5:
+        hits += 1
+
+    if tiles[0].x == 52 and tiles[1].y == 193 and tiles[2].x == 211:
+        hits += 1
+
+    outf = DataFile(outfile, basemap.getFormat())
+    outf.writeTiles(tiles, base)
+
+    os.remove(outfile)
+    shutil.rmtree(base)
+
+    assert hits == 2    
+    
+    
+def test_create_with_bbox():
+    """Test loading with a BBOX string"""
+    hits = 0
+    basemap = BaseMapper(boundary_bbox, base, "topo", False)
+    tiles = list()
+    for level in [8, 9, 10, 11, 12]:
+        basemap.getTiles(level)
+        tiles += basemap.tiles
+
+    if len(tiles) == 5:
+        hits += 1
+
+    if tiles[0].x == 52 and tiles[1].y == 193 and tiles[2].x == 211:
+        hits += 1
+
+    outf = DataFile(outfile, basemap.getFormat())
+    outf.writeTiles(tiles, base)
+
+    os.remove(outfile)
+    shutil.rmtree(base)
+
+    assert hits == 2    
+
+
+def test_create_with_invalid_boundary():
+    """Test loading with invalid boundary types"""
+    hits = 0
+    invalid_boundary = 12345  # Invalid boundary type
+    try:
+        _ = BaseMapper(invalid_boundary, base, "topo", False)
+    except ValueError:
+        hits += 1
+
+    assert hits == 1
+        
+
 if __name__ == "__main__":
-    test_create()
+    test_create_with_geojson()
+    test_create_with_byteio()
+    test_create_with_bbox()
+    test_create_with_invalid_boundary()
